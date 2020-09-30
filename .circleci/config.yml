@@ -1,0 +1,39 @@
+version: 2.1
+
+orbs:
+  python: circleci/python@0.2.1
+
+jobs:
+  build-and-test:
+    executor: python/default
+    steps:
+      - checkout
+      - python/load-cache
+      #- python/install-deps     
+      - run:
+          name: install dependencies
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            sudo apt-get install libspatialindex-dev
+            pip install -r requirements.txt
+            sudo apt-get update && sudo apt-get install -y \
+            gdal-bin python-gdal python3-gdal
+      - python/save-cache
+      - run:
+          name: Test
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            python3 ./manage.py test        
+      - run:
+          name: Create Artifact
+          command: |
+            echo "test completed at $(date +'%Y/%m/%d %T')" > /tmp/test_report
+      - store_artifacts:
+          path: /tmp/test_report
+          destination: test_report
+workflows:
+  main:
+    jobs:
+      - build-and-test
